@@ -1,0 +1,121 @@
+import { BrowserAdapter } from './interfaces/browserAdapter';
+import { PlaywrightAdapter } from './adapters/playwrightAdapter';
+import { IdealistaPortal } from './portals/idealistaPortal';
+import { Ad } from './interfaces/ad';
+import { DatabaseAdapter } from './interfaces/DatabaseAdapter';
+import { MongoDbAdapter } from './adapters/mongoDbAdapter';
+import { AdRepository } from './interfaces/adRepository';
+import { MongoAdRepository } from './repositories/mongoAdRepository';
+import { FotocasaPortal } from './portals/fotocasaPortal';
+import { Logger } from './logger';
+import * as path from 'path';
+import { ILogger } from './interfaces/logger';
+import { PortalDefinition } from './interfaces/portalDefinition';
+import { config } from './config';
+
+(async () => {
+
+    const log = new Logger(path.resolve(process.cwd(), 'logs'));
+
+    log.info('start proccess');
+
+    const portalsDefinition: PortalDefinition[] = [
+        {
+            // url: 'https://www.idealista.com/venta-garajes/telde/san-gregorio/?ordenado-por=fecha-publicacion-desc',
+            url: 'https://www.idealista.com/venta-garajes/telde-las-palmas/',
+            portal: IdealistaPortal
+        },
+        {
+            url: 'https://www.fotocasa.es/es/comprar/garajes/telde/san-gregorio/l?sortType=publicationDate',
+            portal: FotocasaPortal
+        }
+    ];
+
+    let scrappingFunctions: any[] = [];
+    portalsDefinition.forEach(definition => {
+        scrappingFunctions.push(createScrappingFunction(definition, log));
+    });
+
+    const results = await Promise.allSettled(scrappingFunctions.map(fn => fn()));
+
+    const portalData: Ad[] = [];
+    results.forEach(result => {
+
+        if (result.status === 'fulfilled')
+            portalData.push(...result.value);
+
+    });
+
+
+    /******************************************* */
+
+    const uri = getDbUri();
+    const dbname = config.DB_NAME;
+    const collectionName = "ads";
+
+    try {
+
+        const database: DatabaseAdapter = new MongoDbAdapter(uri, dbname, collectionName)
+        const adRepository: AdRepository = new MongoAdRepository(database);
+
+        await adRepository.addOrUpdate(portalData);
+
+    }
+    catch (error) {
+
+        log.error(
+            `Error produced on database proccess\n` +
+            ` - uri: '${uri}'\n` +
+            ` - dbname: '${dbname}'\n` +
+            ` - collectionName: '${collectionName}'\n` +
+            ` - portalData: '${JSON.stringify(portalData)}'\n` +
+            `${(error as Error).stack}`
+
+        );
+    }
+
+    log.info('end proccess');
+
+})();
+
+function createScrappingFunction(definition: PortalDefinition, log: ILogger): () => Promise<Ad[]> {
+
+    return async function (): Promise<Ad[]> {
+
+        const browser: BrowserAdapter = new PlaywrightAdapter();
+        let data: Ad[] = [];
+
+        try {
+
+            await browser.goto(definition.url);
+            data = await browser.ads(definition.portal).getAds();
+
+        }
+        catch (error) {
+
+            log.error(
+                `Error produced on scrapping proccess\n` +
+                ` - definition.url: '${definition.url}'\n` +
+                ` - definition.portal: '${definition.portal.name}'\n` +
+                `${(error as Error).stack}`
+            );
+            throw error;
+
+        }
+        finally {
+
+            browser.close();
+
+        }
+
+        return data;
+
+    };
+
+}
+
+function getDbUri(): string {
+
+    return `mongodb://${config.DB_USER}:${config.DB_PASSWORD}@${config.DB_HOST}:${config.DB_PORT}`;
+
+}

@@ -1,0 +1,25 @@
+{
+  "name": "inmoscrapper",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start:dev": "docker compose up -d && cross-env NODE_ENV=development npx ts-node src/index.ts",
+    "delete:database": "docker exec -it mongodb mongosh -u admin -p secret --authenticationDatabase admin inmo --eval \"db.dropDatabase()\"",
+    "delete:databaseTest": "docker exec -it mongodb mongosh -u admin -p secret --authenticationDatabase admin inmo_test --eval \"db.dropDatabase()\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^24.10.1",
+    "cross-env": "^10.1.0"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "mongodb": "^7.0.0",
+    "playwright-extra": "^4.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  }
+}
