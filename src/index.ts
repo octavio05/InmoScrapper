@@ -21,8 +21,8 @@ import { config } from './config';
 
     const portalsDefinition: PortalDefinition[] = [
         {
-            // url: 'https://www.idealista.com/venta-garajes/telde/san-gregorio/?ordenado-por=fecha-publicacion-desc',
-            url: 'https://www.idealista.com/venta-garajes/telde-las-palmas/',
+            url: 'https://www.idealista.com/venta-garajes/telde/san-gregorio/?ordenado-por=fecha-publicacion-desc',
+            // url: 'https://www.idealista.com/venta-garajes/telde-las-palmas/',
             portal: IdealistaPortal
         },
         {
