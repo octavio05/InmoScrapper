@@ -1,24 +1,30 @@
-import { Page } from "@playwright/test";
 import { IPortal } from "../interfaces/portal";
 import { Ad } from "../interfaces/ad";
 import { PortalType } from "../enums/portalType";
 import { PropertyType } from "../enums/propertyType";
-import { Portal } from "./portal";
+import { BrowserAdapter } from "../interfaces/browserAdapter";
+import { BrowserElement } from "../interfaces/browserElement";
+import { PortalUrl } from "../interfaces/portalDefinition";
 
 /**
  * FotocasaPortal class that implements the Portal interface.
  * This class provides methods to extract ads from the Fotocasa website.
  */
-export class FotocasaPortal extends Portal implements IPortal{
+export class FotocasaPortal implements IPortal {
+
+    private readonly _browser: BrowserAdapter;
 
     /**
      * Constructor for FotocasaPortal.
-     * @param page Playwright Page object.
-     * @throws Error if page is null or undefined.
+     * @param browser BrowserAdapter object.
+     * @throws Error if browser is null or undefined.
      */
-    constructor(page: Page) {
+    constructor(browser: BrowserAdapter) {
 
-        super(page);
+        if (!browser)
+            throw new Error('Browser cannot be null or undefined');
+
+        this._browser = browser;
 
     }
 
@@ -26,47 +32,74 @@ export class FotocasaPortal extends Portal implements IPortal{
      * Extracts ads from the Fotocasa webpage. 
      * @returns A Promise that resolves to an array of Ad objects.
      */
-    public async getAds(): Promise<Ad[]> {
-
-        await this.beforeGetAds();
+    public async getAds(splitUrl: PortalUrl): Promise<Ad[]> {
 
         const date: Date = new Date();
+        let nextPage: string | null = null;
+        let data: Ad[][] = [];
+        let url = `${splitUrl.base}/${splitUrl.filter}/?${splitUrl.params}`;
 
-        const ads = await this._page.$$eval(
-            '#main-content article',
-            (nodes, opts: { portalType: PortalType, propertyType: PropertyType, date: Date }) =>
-            nodes
-                .map(n => {
-                    const match = n.querySelector('.w-full h3 > a')?.getAttribute('href')?.match(/\/(\d+)\//);
-                    const Id = match ? match[1] : '';
+        try {
 
-                    const directionRaw = n.querySelector('.w-full h3 > a > span')?.textContent || '';
-                    const Direction = directionRaw.trim().replace(/<[^>]+>/g, '');
+            do {
 
-                    const priceHtml = n.querySelector('.w-full div > span')?.innerHTML || '';
-                    const priceClean = priceHtml.trim().replace(/<[^>]*>/g, '').replace(/[^\d]/g, '');
-                    const priceValue = priceClean ? parseInt(priceClean) : null;
+                await this._browser.open();
+                await this._browser.goto(url);
+                await this.beforeGetAds();
 
-                    return {
-                        'Portal': opts.portalType,
-                        'Property': opts.propertyType,
-                        Id,
-                        Direction,
-                        'Description': '',
-                        'Features': [],
-                        'Images': [],
-                        'Price': [{
-                            'value': priceValue,
-                            'date': opts.date
-                        }]
-                    };
-                }),
-            { portalType: PortalType.FOTOCASA, propertyType: PropertyType.GARAGE, date }
-        );
+                data.push(await this.scrapingAdsList(date));
 
-        // Filter out duplicates by ID, keeping the first occurrence
-        return Array.from(
-            new Map(ads.map(ad => [ad.Id, ad])).values()
+                nextPage = await this.getNetxtPageUrl();
+                if (nextPage !== null) {
+
+                    url = `${splitUrl.base}${nextPage}`;
+                    await this._browser.waitForTimeout(3000);
+                    await this._browser.close();
+
+                }
+
+            } while (nextPage !== null);
+
+        }
+        finally {
+
+            if (this._browser.isOpen())
+                await this._browser.close();
+
+        }
+
+        return data.flat();
+
+    }
+
+    private async scrapingAdsList(date: Date): Promise<Ad[]> {
+
+        const ads: BrowserElement[] = await this._browser.getElements('#main-content article');
+        return await Promise.all(
+            ads.map(async a => {
+
+                const match = (await a.getElement('.w-full h3 > a')?.getAttribute('href'))?.match(/\/(\d+)\//);
+                const Id = match ? match[1] : '';
+
+                const Direction = (await a.getElement('.w-full h3 > a > span')?.textContent() || '').trim().replace(/<[^>]+>/g, '');
+
+                const priceHtml = (await a.getElement('.w-full div > span')?.textContent())?.trim().replace(/<[^>]*>/g, '').replace(/[^\d]/g, '');
+                const priceValue = priceHtml ? parseInt(priceHtml) : null;
+
+                return {
+                    'Portal': PortalType.FOTOCASA,
+                    'Property': PropertyType.GARAGE,
+                    Id,
+                    Direction,
+                    'Description': '',
+                    'Features': [],
+                    'Images': [],
+                    'Price': [{
+                        'value': priceValue,
+                        'date': date
+                    }]
+                };
+            })
         );
 
     }
@@ -77,11 +110,44 @@ export class FotocasaPortal extends Portal implements IPortal{
      */
     private async beforeGetAds(): Promise<void> {
 
-        await this._page.click('#didomi-notice-agree-button');
-        await this._page.waitForTimeout(1000);
+        // Esperar a que el modal esté visible
+        await this._browser.waitForSelector('#didomi-notice-agree-button',
+            { timeout: 10000 });
 
-        const scrollHeight = await this._page.evaluate(() => document.body.scrollHeight);
-        await this.scrollTo(scrollHeight);
+        // Esperar a que sea clickeable (no bloqueado)
+        const button: BrowserElement | null = await this._browser.getElement('#didomi-notice-agree-button');
+
+        // Scroll para asegurar visibilidad
+        await button!.scrollIntoViewIfNeeded();
+
+        // Delay antes de click
+        await this._browser.waitForTimeout(2000);
+
+        // Click con força
+        await button!.click({ force: true });
+
+        // Esperar a que desaparezca el modal
+        await this._browser.waitForSelector('#didomi-host',
+            { state: 'hidden', timeout: 5000 });
+
+        await this._browser.scrollToBottom();
+
+        await this._browser.waitForTimeout(2000);
+
+    }
+
+    /**
+     * Get the URL of the next page.
+     * @returns The URL of the next page or null if there is no next page.
+     */
+    private async getNetxtPageUrl(): Promise<string | null> {
+
+        const linkNextPage: BrowserElement | null = await this._browser.getElement('[data-panot-component="pagination-next-button"]');
+
+        if (!linkNextPage)
+            return null;
+
+        return (await linkNextPage.getElement('a')?.getAttribute('href')) || null;
 
     }
 

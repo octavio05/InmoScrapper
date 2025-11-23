@@ -29,10 +29,14 @@ import { IPortal } from './interfaces/portal';
             },
             portal: IdealistaPortal
         },
-        // {
-        //     url: 'https://www.fotocasa.es/es/comprar/garajes/telde/san-gregorio/l?sortType=publicationDate',
-        //     portal: FotocasaPortal
-        // }
+        {
+            url: {
+                base: 'https://www.fotocasa.es',
+                filter: 'es/comprar/garajes/telde/san-gregorio/l',
+                params: 'sortType=publicationDate'
+            },
+            portal: FotocasaPortal
+        }
     ];
 
     let scrappingFunctions: any[] = [];
@@ -99,7 +103,9 @@ function createScrappingFunction(definition: PortalDefinition, log: ILogger): ()
 
             log.error(
                 `Error produced on scrapping proccess\n` +
-                ` - definition.url: '${definition.url}'\n` +
+                ` - definition.url.base: '${definition.url.base}'\n` +
+                ` - definition.url.filter: '${definition.url.filter}'\n` +
+                ` - definition.url.params: '${definition.url.params}'\n` +
                 ` - definition.portal: '${definition.portal.name}'\n` +
                 `${(error as Error).stack}`
             );

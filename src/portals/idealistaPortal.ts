@@ -42,6 +42,7 @@ export class IdealistaPortal implements IPortal {
         try {
 
             do {
+
                 await this._browser.open();
                 await this._browser.goto(url);
                 await this.beforeGetAds();
@@ -183,7 +184,7 @@ export class IdealistaPortal implements IPortal {
 
         const linkNextPage: BrowserElement | null = await this._browser.getElement('.pagination li.next > a');
 
-        if (linkNextPage === null)
+        if (!linkNextPage)
             return null;
 
         return await linkNextPage.getAttribute('href');
