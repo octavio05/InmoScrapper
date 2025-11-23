@@ -1,24 +1,30 @@
-import { Locator, Page } from "@playwright/test";
 import { IPortal } from "../interfaces/portal";
 import { Ad } from "../interfaces/ad";
 import { PortalType } from "../enums/portalType";
 import { PropertyType } from "../enums/propertyType";
-import { Portal } from "./portal";
+import { BrowserAdapter } from "../interfaces/browserAdapter";
+import { BrowserElement } from "../interfaces/browserElement";
+import { PortalUrl } from "../interfaces/portalDefinition";
 
 /**
  * IdealistaPortal class that implements the Portal interface.
  * This class provides methods to extract ads from the Idealista website.
  */
-export class IdealistaPortal extends Portal implements IPortal {
+export class IdealistaPortal implements IPortal {
+
+    private readonly _browser: BrowserAdapter;
 
     /**
      * Constructor for IdealistaPortal.
-     * @param page Playwright Page object.
-     * @throws Error if page is null or undefined.
+     * @param browser BrowserAdapter object.
+     * @throws Error if browser is null or undefined.
      */
-    constructor(page: Page) {
+    constructor(browser: BrowserAdapter) {
 
-        super(page);
+        if (!browser)
+            throw new Error('Browser cannot be null or undefined');
+
+        this._browser = browser;
 
     }
 
@@ -26,57 +32,53 @@ export class IdealistaPortal extends Portal implements IPortal {
      * Extracts ads from the Idealista webpage. 
      * @returns A Promise that resolves to an array of Ad objects.
      */
-    public async getAds(): Promise<Ad[]> {
-
-        await this.beforeGetAds();
+    public async getAds(splitUrl: PortalUrl): Promise<Ad[]> {
 
         const date: Date = new Date();
-        let nextPage: Locator | null;
+        let nextPage: string | null;
         let data: Ad[][] = [];
+        let url: string = `${splitUrl.base}/${splitUrl.filter}/?${splitUrl.params}`;
 
-        // do {
+        try {
 
-        //     data.push(await this.scrapingAdsList(date));
+            do {
+                await this._browser.open();
+                await this._browser.goto(url);
+                await this.beforeGetAds();
 
-        //     const scrollHeight = await this._page.evaluate(() => document.querySelector('.items-container')?.scrollHeight || 0);
-        //     await this.scrollTo(scrollHeight);
+                data.push(await this.scrapingAdsList(date));
 
-        //     //     await this.simulateHuman();
+                nextPage = await this.getNextPageUrl();
+                if (nextPage !== null) {
 
-        //     nextPage = await this.getNextPage();
+                    url = `${splitUrl.base}${nextPage}`;
+                    await this._browser.waitForTimeout(3000);
+                    await this._browser.close();
 
-        //     if (nextPage !== null) {
+                }
 
-        //         //         const scrollHeight = await this._page.evaluate(() => document.querySelector('.items-container')?.scrollHeight || 0);
-        //         //         await this.scrollTo(scrollHeight);
+            } while (nextPage !== null);
 
-        //         // Delay importante antes de hacer click a siguiente página
-        //         await this._page.waitForTimeout(2000 + Math.random() * 3000);
-        //         await nextPage.click();
+        }
+        finally {
 
-        //         // Esperar a que cargue la página
-        //         await this._page.waitForTimeout(3000 + Math.random() * 2000);
+            if (this._browser.isOpen())
+                await this._browser.close();
 
-        //     }
+        }
 
-        // } while (nextPage !== null);
-
-        // return await this.scrapingAdContent(data.flat());
-
-        return (await this.scrapingAdsList(date)).flat();
-
-        // return data.flat();
+        return data.flat();
 
     }
 
     /**
      * Starts the scraping process for the current page.
-     * @param date Current date
+     * @param date Current date 
      * @returns a Promise that resolves to an array of Ad objects.
      */
     private async scrapingAdsList(date: Date): Promise<Ad[]> {
 
-        const ads = await this._page.locator('#main-content > section > article.item').all();
+        const ads: BrowserElement[] = await this._browser.getElements('#main-content > section > article.item');
         return await Promise.all(
             ads
                 .filter(async a => await a.getAttribute('data-element-id') !== undefined)
@@ -84,15 +86,15 @@ export class IdealistaPortal extends Portal implements IPortal {
                     'Portal': PortalType.IDEALISTA,
                     'Property': PropertyType.GARAGE,
                     'Id': await a.getAttribute('data-element-id')! || '',
-                    'Direction': (await a.locator('.item-info-container > a').first().textContent())?.trim() || '',
+                    'Direction': (await a.getElement('.item-info-container > a').textContent())?.trim() || '',
                     'Description': '',
                     'Features': [],
                     'Images': [],
                     'Price': [{
                         'value':
-                            (await a.locator('.item-price').textContent()) === undefined ?
+                            (await a.getElement('.item-price')?.textContent()) === undefined ?
                                 null :
-                                parseInt((await a.locator('.item-price').textContent())!.trim()
+                                parseInt((await a.getElement('.item-price')?.textContent())!.trim()
                                     .replace(/<[^>]*>/g, '')
                                     .replace(/[^\d]/g, '')
                                 ),
@@ -108,83 +110,83 @@ export class IdealistaPortal extends Portal implements IPortal {
      * @param ads Array of Ad objects. 
      * @returns A Promise that resolves to an array of Ad objects with content filled.  
      */
-    private async scrapingAdContent(ads: Ad[]): Promise<Ad[]> {
+    // private async scrapingAdContent(ads: Ad[]): Promise<Ad[]> {
 
-        for (const ad of ads) {
+    //     for (const ad of ads) {
 
-            await this.simulateHuman();
+    //         await this.simulateHuman();
 
-            await this._page.click(`article[data-element-id='${ad.Id}'] a.item-link`);
+    //         await this._page.click(`article[data-element-id='${ad.Id}'] a.item-link`);
 
-            // Esperar carga de página
-            await this._page.waitForTimeout(2000 + Math.random() * 2000);
-            await this.simulateHuman();
+    //         // Esperar carga de página
+    //         await this._page.waitForTimeout(2000 + Math.random() * 2000);
+    //         await this.simulateHuman();
 
-            ad.Description = await this.scrapingDescription();
-            ad.Features = await this.scrapingFeatures();
-            ad.Images = await this.scrapingImages();
+    //         ad.Description = await this.scrapingDescription();
+    //         ad.Features = await this.scrapingFeatures();
+    //         ad.Images = await this.scrapingImages();
 
-            await this._page.click('#pager .--not-mobile a');
+    //         await this._page.click('#pager .--not-mobile a');
 
-        }
+    //     }
 
-        return ads;
+    //     return ads;
 
-    }
+    // }
 
     /**
      * Scrapes the description of the ad.
      * @returns Ad description
      */
-    private async scrapingDescription(): Promise<string> {
+    // private async scrapingDescription(): Promise<string> {
 
-        return (await this._page.locator('.comment p').innerText()).trim();
+    //     return (await this._page.locator('.comment p').innerText()).trim();
 
-    }
+    // }
 
     /**
      * Scrapes the features of the ad.
      * @returns Ad features
      */
-    private async scrapingFeatures(): Promise<string[]> {
+    // private async scrapingFeatures(): Promise<string[]> {
 
-        const features = await this._page.locator('.details-property li').all();
-        return Promise.all(
-            features.map(async f => (await f.textContent())?.trim() || '')
-        );
+    //     const features = await this._page.locator('.details-property li').all();
+    //     return Promise.all(
+    //         features.map(async f => (await f.textContent())?.trim() || '')
+    //     );
 
-    }
+    // }
 
     /**
      * Scrapes the images of the ad.
      * @returns Ad images
      */
-    private async scrapingImages(): Promise<string[]> {
+    // private async scrapingImages(): Promise<string[]> {
 
-        const scrollHeight = await this._page.evaluate(() => document.body.scrollHeight);
-        await this.scrollTo(scrollHeight);
+    //     const scrollHeight = await this._page.evaluate(() => document.body.scrollHeight);
+    //     await this.scrollTo(scrollHeight);
 
-        if (await this._page.locator('#main-multimedia .more').count() > 0)
-            await this._page.click('#main-multimedia .more-photos');
+    //     if (await this._page.locator('#main-multimedia .more').count() > 0)
+    //         await this._page.click('#main-multimedia .more-photos');
 
-        const htmlImages: Locator[] = await this._page.locator('#main-multimedia picture img').all();
+    //     const htmlImages: Locator[] = await this._page.locator('#main-multimedia picture img').all();
 
-        return await Promise.all(htmlImages.map(img => img.getAttribute('src'))) as string[];
+    //     return await Promise.all(htmlImages.map(img => img.getAttribute('src'))) as string[];
 
-    }
+    // }
 
     /**
      * Gets the locator for the next page link.
      * @returns next page Locator or null if not found.
      */
-    private async getNextPage(): Promise<Locator | null> {
+    private async getNextPageUrl(): Promise<string | null> {
 
-        const linkNextPage = this._page.locator('.pagination li.next > a');
+        const linkNextPage: BrowserElement | null = await this._browser.getElement('.pagination li.next > a');
 
-        if (await linkNextPage.count() === 0)
+        if (linkNextPage === null)
             return null;
 
-        return linkNextPage;
+        return await linkNextPage.getAttribute('href');
 
     }
 
@@ -194,48 +196,49 @@ export class IdealistaPortal extends Portal implements IPortal {
     private async beforeGetAds(): Promise<void> {
 
         // Esperar a que el modal esté visible
-        await this._page.waitForSelector('#didomi-notice-agree-button',
+        await this._browser.waitForSelector('#didomi-notice-agree-button',
             { timeout: 10000 });
 
         // Esperar a que sea clickeable (no bloqueado)
-        const button = this._page.locator('#didomi-notice-agree-button');
+        const button: BrowserElement | null = await this._browser.getElement('#didomi-notice-agree-button');
 
         // Scroll para asegurar visibilidad
-        await button.scrollIntoViewIfNeeded();
+        await button!.scrollIntoViewIfNeeded();
 
         // Delay antes de click
-        await this._page.waitForTimeout(2000);
+        await this._browser.waitForTimeout(2000);
 
         // Click con força
-        await button.click({ force: true });
+
+        await button!.click({ force: true });
 
         // Esperar a que desaparezca el modal
-        await this._page.waitForSelector('#didomi-host',
+        await this._browser.waitForSelector('#didomi-host',
             { state: 'hidden', timeout: 5000 });
 
-        await this._page.waitForTimeout(2000);
+        await this._browser.waitForTimeout(2000);
 
     }
 
-    private async simulateHuman() {
+    // private async simulateHuman() {
 
-        // Delays más naturales (3-11 segundos)
-        await this._page.waitForTimeout(3000 + Math.random() * 8000);
+    //     // Delays más naturales (3-11 segundos)
+    //     await this._page.waitForTimeout(3000 + Math.random() * 8000);
 
-        // Movimientos aleatorios en viewport
-        // const x = Math.random() * window.innerWidth;
-        // const y = Math.random() * window.innerHeight;
-        const x = Math.random() * await this._page.evaluate(() => window.innerWidth || 0);
-        const y = Math.random() * await this._page.evaluate(() => window.innerHeight || 0);
-        await this._page.mouse.move(x, y);
+    //     // Movimientos aleatorios en viewport
+    //     // const x = Math.random() * window.innerWidth;
+    //     // const y = Math.random() * window.innerHeight;
+    //     const x = Math.random() * await this._page.evaluate(() => window.innerWidth || 0);
+    //     const y = Math.random() * await this._page.evaluate(() => window.innerHeight || 0);
+    //     await this._page.mouse.move(x, y);
 
-        // Pausa realista
-        await this._page.waitForTimeout(800 + Math.random() * 1500);
+    //     // Pausa realista
+    //     await this._page.waitForTimeout(800 + Math.random() * 1500);
 
-        // Scroll gradual
-        await this._page.keyboard.press('PageDown');
-        await this._page.waitForTimeout(1500 + Math.random() * 2500);
+    //     // Scroll gradual
+    //     await this._page.keyboard.press('PageDown');
+    //     await this._page.waitForTimeout(1500 + Math.random() * 2500);
 
-    }
+    // }
 
 }

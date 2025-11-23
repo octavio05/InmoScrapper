@@ -1,5 +1,5 @@
 import { BrowserAdapter } from './interfaces/browserAdapter';
-import { PlaywrightAdapter } from './adapters/playwrightAdapter';
+import { PlaywrightAdapter } from './adapters/playwright/playwrightAdapter';
 import { IdealistaPortal } from './portals/idealistaPortal';
 import { Ad } from './interfaces/ad';
 import { DatabaseAdapter } from './interfaces/DatabaseAdapter';
@@ -12,6 +12,7 @@ import * as path from 'path';
 import { ILogger } from './interfaces/logger';
 import { PortalDefinition } from './interfaces/portalDefinition';
 import { config } from './config';
+import { IPortal } from './interfaces/portal';
 
 (async () => {
 
@@ -21,14 +22,17 @@ import { config } from './config';
 
     const portalsDefinition: PortalDefinition[] = [
         {
-            url: 'https://www.idealista.com/venta-garajes/telde/san-gregorio/?ordenado-por=fecha-publicacion-desc',
-            // url: 'https://www.idealista.com/venta-garajes/telde-las-palmas/',
+            url: {
+                base: 'https://www.idealista.com',
+                filter: 'venta-garajes/telde/san-gregorio',
+                params: 'ordenado-por=fecha-publicacion-desc'
+            },
             portal: IdealistaPortal
         },
-        {
-            url: 'https://www.fotocasa.es/es/comprar/garajes/telde/san-gregorio/l?sortType=publicationDate',
-            portal: FotocasaPortal
-        }
+        // {
+        //     url: 'https://www.fotocasa.es/es/comprar/garajes/telde/san-gregorio/l?sortType=publicationDate',
+        //     portal: FotocasaPortal
+        // }
     ];
 
     let scrappingFunctions: any[] = [];
@@ -83,12 +87,12 @@ function createScrappingFunction(definition: PortalDefinition, log: ILogger): ()
     return async function (): Promise<Ad[]> {
 
         const browser: BrowserAdapter = new PlaywrightAdapter();
+        const portal: IPortal = new definition.portal(browser);
         let data: Ad[] = [];
 
         try {
 
-            await browser.goto(definition.url);
-            data = await browser.ads(definition.portal).getAds();
+            data = await portal.getAds(definition.url);
 
         }
         catch (error) {
@@ -100,11 +104,6 @@ function createScrappingFunction(definition: PortalDefinition, log: ILogger): ()
                 `${(error as Error).stack}`
             );
             throw error;
-
-        }
-        finally {
-
-            browser.close();
 
         }
 
