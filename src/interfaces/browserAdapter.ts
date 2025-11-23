@@ -20,4 +20,6 @@ export interface BrowserAdapter {
 
     waitForTimeout(timeout: number): Promise<void>;
 
+    scrollToBottom(): Promise<void>;
+
 }

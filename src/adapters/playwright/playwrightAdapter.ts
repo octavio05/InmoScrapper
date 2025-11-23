@@ -164,11 +164,39 @@ export class PlaywrightAdapter implements BrowserAdapter {
 
     }
 
+    /**
+     * checks if the browser is open.
+     * @returns true if the browser is open, false otherwise.
+     */
     public isOpen(): boolean {
 
         return this._page !== null ||
             this._context !== null ||
             this._browser !== null;
+
+    }
+
+    /**
+     * Scrolls to the bottom of the page.
+     */
+    public async scrollToBottom(): Promise<void> {
+
+        if (!this._page)
+            return;
+
+        const scrollHeight = await this._page.evaluate(() => document.body.scrollHeight);
+        let currentHeight = 0;
+
+        while (currentHeight < scrollHeight) {
+
+            currentHeight += 1000;
+            if (currentHeight > scrollHeight)
+                currentHeight = scrollHeight;
+
+            await this._page.evaluate((height) => window.scrollTo(0, height), currentHeight);
+            await this._page.waitForTimeout(1000);
+
+        }
 
     }
 
