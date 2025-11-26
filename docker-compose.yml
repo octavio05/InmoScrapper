@@ -1,4 +1,29 @@
 services:
+
+  scraper:
+    build:
+      dockerfile: Dockerfile
+      context: .
+      args:
+        - NODE_ENV=${NODE_ENV}
+    container_name: scraper
+    depends_on:
+      - mongodb
+    volumes:
+      - ./logs:/app/logs
+      - ./src:/app/src
+      - /app/node_modules
+    security_opt:
+      - seccomp:unconfined
+    shm_size: "1gb"
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_PORT=${DB_PORT}
+      - DB_HOST=${DB_HOST}
+      - DB_NAME=${DB_NAME}
+
   mongodb:
     image: mongo:latest
     container_name: mongodb
@@ -6,8 +31,8 @@ services:
     ports:
       - "27017:27017"
     environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: secret
+      MONGO_INITDB_ROOT_USERNAME: ${DB_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
     volumes:
       - mongo_data:/data/db
 

@@ -7,6 +7,7 @@ node_modules/
 /playwright/.cache/
 /playwright/.auth/
 .env.development
+.env.production
 package-lock.json
 logs
 tests

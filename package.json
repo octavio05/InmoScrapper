@@ -3,7 +3,12 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start:dev": "docker compose up -d && cross-env NODE_ENV=development npx ts-node src/index.ts",
+    "build:docker:development": "docker compose --env-file .env.development build",
+    "build:docker:production": "docker compose --env-file .env.production build",
+    "start:development": "docker compose --env-file .env.development up -d",
+    "start:production": "docker compose --env-file .env.production up -d",
+    "start:docker:development": "xvfb-run -a npx ts-node src/index.ts",
+    "start:docker:production": "tsc && xvfb-run -a node dist/index.js",
     "delete:database": "docker exec -it mongodb mongosh -u admin -p secret --authenticationDatabase admin inmo --eval \"db.dropDatabase()\"",
     "delete:databaseTest": "docker exec -it mongodb mongosh -u admin -p secret --authenticationDatabase admin inmo_test --eval \"db.dropDatabase()\""
   },
@@ -14,7 +19,9 @@
   "devDependencies": {
     "@playwright/test": "^1.56.1",
     "@types/node": "^24.10.1",
-    "cross-env": "^10.1.0"
+    "cross-env": "^10.1.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "dotenv": "^17.2.3",
