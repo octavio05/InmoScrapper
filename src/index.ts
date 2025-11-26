@@ -18,7 +18,7 @@ import { IPortal } from './interfaces/portal';
 
     const log = new Logger(path.resolve(process.cwd(), 'logs'));
 
-    log.info('start proccess');
+    log.info(`start proccess (${process.env.NODE_ENV})`);
 
     const portalsDefinition: PortalDefinition[] = [
         {
@@ -82,7 +82,7 @@ import { IPortal } from './interfaces/portal';
         );
     }
 
-    log.info('end proccess');
+    log.info(`end proccess (${process.env.NODE_ENV})`);
 
 })();
 
