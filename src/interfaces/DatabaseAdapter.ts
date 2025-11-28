@@ -1,9 +1,11 @@
-import { AnyBulkWriteOperation, Collection } from "mongodb";
+import { Ad } from "./ad";
 
 export interface DatabaseAdapter {
 
-    connect<T>(): Promise<Collection<any>>;
+    connect(): Promise<void>;
 
     disconnect(): Promise<void>;
+
+    addOrUpdate(ad: Ad): Promise<void>
 
 }

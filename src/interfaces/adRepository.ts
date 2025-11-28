@@ -1,6 +1,6 @@
 import { Ad } from "./ad";
 
-export interface AdRepository {
+export interface IAdRepository {
 
     addOrUpdate(ads: Ad[]): Promise<void>;
 

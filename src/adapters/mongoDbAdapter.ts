@@ -1,5 +1,6 @@
 import { Collection, Db, MongoClient } from "mongodb";
-import { DatabaseAdapter } from "../interfaces/DatabaseAdapter";
+import { DatabaseAdapter } from "../interfaces/databaseAdapter";
+import { Ad } from "../interfaces/ad";
 
 /**
  * MongoDbAdapter class that implements the DatabaseAdapter interface.
@@ -10,6 +11,7 @@ export class MongoDbAdapter implements DatabaseAdapter {
     private readonly _uri: string;
     private readonly _dbName: string;
     private readonly _collectionName: string = "ads";
+    private _collection: Collection<Document> | null = null;
     private _client: MongoClient | null = null;
 
     /**
@@ -40,13 +42,13 @@ export class MongoDbAdapter implements DatabaseAdapter {
      * Connects to the MongoDB database and returns the specified collection.
      * @returns Promise that resolves to a Collection of type T.
      */
-    public async connect<T extends Document>(): Promise<Collection<T>> {
+    public async connect(): Promise<void> {
 
         this._client = new MongoClient(this._uri);
         await this._client!.connect();
         const database = this._client!.db(this._dbName);
 
-        return await this.getCollection<T>(database);
+        this._collection = await this.getCollection(database);
 
     }
 
@@ -59,8 +61,34 @@ export class MongoDbAdapter implements DatabaseAdapter {
 
             await this._client!.close();
             this._client = null;
+            this._collection = null;
 
         }
+
+    }
+
+    public async addOrUpdate(ad: Ad): Promise<void> {
+
+        await this._collection!.findOneAndUpdate(
+            { Id: ad.Id, Portal: ad.Portal },
+            {
+                $push: {
+                    Price: {
+                        value: ad.Price[0].value,
+                        date: new Date()
+                    }
+                },
+                $set: {
+                    Portal: ad.Portal,
+                    Direction: ad.Direction,
+                    Property: ad.Property,
+                    Images: ad.Images,
+                    Description: ad.Description,
+                    Features: ad.Features
+                }
+            },
+            { upsert: true }
+        );
 
     }
 
@@ -86,7 +114,7 @@ export class MongoDbAdapter implements DatabaseAdapter {
     private async existsCollection(database: Db): Promise<boolean> {
 
         const collections = await database.listCollections({}, { nameOnly: true }).toArray();
-        return collections.some(col => col.name === this._collectionName);        
+        return collections.some(col => col.name === this._collectionName);
 
     }
 

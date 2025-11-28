@@ -2,10 +2,10 @@ import { BrowserAdapter } from './interfaces/browserAdapter';
 import { PlaywrightAdapter } from './adapters/playwright/playwrightAdapter';
 import { IdealistaPortal } from './portals/idealistaPortal';
 import { Ad } from './interfaces/ad';
-import { DatabaseAdapter } from './interfaces/DatabaseAdapter';
+import { DatabaseAdapter } from './interfaces/databaseAdapter';
 import { MongoDbAdapter } from './adapters/mongoDbAdapter';
-import { AdRepository } from './interfaces/adRepository';
-import { MongoAdRepository } from './repositories/mongoAdRepository';
+import { IAdRepository } from './interfaces/adRepository';
+import { AdRepository } from './repositories/adRepository';
 import { FotocasaPortal } from './portals/fotocasaPortal';
 import { Logger } from './logger';
 import * as path from 'path';
@@ -64,7 +64,7 @@ import { IPortal } from './interfaces/portal';
     try {
 
         const database: DatabaseAdapter = new MongoDbAdapter(uri, dbname, collectionName)
-        const adRepository: AdRepository = new MongoAdRepository(database);
+        const adRepository: IAdRepository = new AdRepository(database);
 
         await adRepository.addOrUpdate(portalData);
 
