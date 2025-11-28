@@ -1,6 +1,7 @@
 import { Collection, Db, MongoClient } from "mongodb";
 import { DatabaseAdapter } from "../interfaces/databaseAdapter";
 import { Ad } from "../interfaces/ad";
+import { DatabaseConfig } from "../interfaces/databaseConfig";
 
 /**
  * MongoDbAdapter class that implements the DatabaseAdapter interface.
@@ -8,32 +9,25 @@ import { Ad } from "../interfaces/ad";
  */
 export class MongoDbAdapter implements DatabaseAdapter {
 
-    private readonly _uri: string;
-    private readonly _dbName: string;
+    private readonly _config: DatabaseConfig | null = null;
     private readonly _collectionName: string = "ads";
     private _collection: Collection<Document> | null = null;
     private _client: MongoClient | null = null;
 
     /**
      * Constructor for MongoDbAdapter.
-     * @param uri MongoDB connection string.
-     * @param dbName Name of the database to connect to.
+     * @param config Database configuration.
      * @param collectionName Name of the collection to use.
      * @throws Error if any of the parameters are null or empty.
      */
-    constructor(uri: string, dbName: string, collectionName: string) {
+    constructor(config: DatabaseConfig, collectionName: string) {
 
-        if (uri === null || uri === undefined || uri.trim() === '')
-            throw new Error('uri cannot be null or empty');
-
-        if (dbName === null || dbName === undefined || dbName.trim() === '')
-            throw new Error('dbName cannot be null or empty');
+        this.validateConfig(config);
 
         if (collectionName === null || collectionName === undefined || collectionName.trim() === '')
             throw new Error('collectionName cannot be null or empty');
 
-        this._uri = uri;
-        this._dbName = dbName;
+        this._config = config;
         this._collectionName = collectionName;
 
     }
@@ -44,9 +38,9 @@ export class MongoDbAdapter implements DatabaseAdapter {
      */
     public async connect(): Promise<void> {
 
-        this._client = new MongoClient(this._uri);
+        this._client = new MongoClient(this.getConnectionString());
         await this._client!.connect();
-        const database = this._client!.db(this._dbName);
+        const database = this._client!.db(this._config!.dbName);
 
         this._collection = await this.getCollection(database);
 
@@ -67,6 +61,11 @@ export class MongoDbAdapter implements DatabaseAdapter {
 
     }
 
+    /**
+     * Adds or updates an ad in the MongoDB database.
+     * @param ad Ad to add or update.
+     * @returns Promise that resolves to void.
+     */
     public async addOrUpdate(ad: Ad): Promise<void> {
 
         await this._collection!.findOneAndUpdate(
@@ -93,6 +92,33 @@ export class MongoDbAdapter implements DatabaseAdapter {
     }
 
     /**
+     * Validates the database configuration.
+     * @param config Database configuration.
+     * @throws Error if any of the parameters are null or empty.
+     */
+    private validateConfig(config: DatabaseConfig) {
+
+        if (config === null || config === undefined)
+            throw new Error('config cannot be null or undefined');
+
+        if (config.user === null || config.user === undefined || config.user.trim() === '')
+            throw new Error('user cannot be null or empty');
+
+        if (config.password === null || config.password === undefined || config.password.trim() === '')
+            throw new Error('password cannot be null or empty');
+
+        if (config.host === null || config.host === undefined || config.host.trim() === '')
+            throw new Error('host cannot be null or empty');
+
+        if (config.port === null || config.port === undefined)
+            throw new Error('port cannot be null or undefined');
+
+        if (config.dbName === null || config.dbName === undefined || config.dbName.trim() === '')
+            throw new Error('dbName cannot be null or empty');
+
+    }
+
+    /**
      * Gets the specified collection from the database, creating it if it doesn't exist.
      * @param database Database instance. 
      * @returns Promise that resolves to the Collection of type T. 
@@ -115,6 +141,16 @@ export class MongoDbAdapter implements DatabaseAdapter {
 
         const collections = await database.listCollections({}, { nameOnly: true }).toArray();
         return collections.some(col => col.name === this._collectionName);
+
+    }
+
+    /**
+     * Creates the MongoDB connection string.
+     * @returns MongoDB connection string.
+     */
+    private getConnectionString(): string {
+
+        return `mongodb://${this._config!.user}:${this._config!.password}@${this._config!.host}:${this._config!.port}`;
 
     }
 
