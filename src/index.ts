@@ -13,6 +13,8 @@ import { ILogger } from './interfaces/logger';
 import { PortalDefinition } from './interfaces/portalDefinition';
 import { config } from './config';
 import { IPortal } from './interfaces/portal';
+import { CouchDbAdapter } from './adapters/couchDbAdapter';
+import { DatabaseConfig } from './interfaces/databaseConfig';
 
 (async () => {
 
@@ -57,13 +59,19 @@ import { IPortal } from './interfaces/portal';
 
     /******************************************* */
 
-    const uri = getDbUri();
-    const dbname = config.DB_NAME;
-    const collectionName = "ads";
+    // const collectionName = "ads";
+    const dbConfig: DatabaseConfig = {
+        user: config.DB_USER,
+        password: config.DB_PASSWORD,
+        host: config.DB_HOST,
+        port: config.DB_PORT,
+        dbName: config.DB_NAME
+    };
 
     try {
 
-        const database: DatabaseAdapter = new MongoDbAdapter(uri, dbname, collectionName)
+        // const database: DatabaseAdapter = new MongoDbAdapter(dbConfig, collectionName)
+        const database: DatabaseAdapter = new CouchDbAdapter(dbConfig);
         const adRepository: IAdRepository = new AdRepository(database);
 
         await adRepository.addOrUpdate(portalData);
@@ -73,9 +81,12 @@ import { IPortal } from './interfaces/portal';
 
         log.error(
             `Error produced on database proccess\n` +
-            ` - uri: '${uri}'\n` +
-            ` - dbname: '${dbname}'\n` +
-            ` - collectionName: '${collectionName}'\n` +
+            ` - user: '${dbConfig.user}'\n` +
+            ` - password: '${dbConfig.password}'\n` +
+            ` - host: '${dbConfig.host}'\n` +
+            ` - port: '${dbConfig.port}'\n` +
+            ` - dbname: '${dbConfig.dbName}'\n` +
+            // ` - collectionName: '${collectionName}'\n` +
             ` - portalData: '${JSON.stringify(portalData)}'\n` +
             `${(error as Error).stack}`
 
@@ -116,11 +127,5 @@ function createScrappingFunction(definition: PortalDefinition, log: ILogger): ()
         return data;
 
     };
-
-}
-
-function getDbUri(): string {
-
-    return `mongodb://${config.DB_USER}:${config.DB_PASSWORD}@${config.DB_HOST}:${config.DB_PORT}`;
 
 }

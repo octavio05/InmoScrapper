@@ -8,7 +8,8 @@ services:
         - NODE_ENV=${NODE_ENV}
     container_name: scraper
     depends_on:
-      - mongodb
+      # - mongodb
+      - couchdb
     volumes:
       - ./logs:/app/logs
       - ./src:/app/src
@@ -24,17 +25,32 @@ services:
       - DB_HOST=${DB_HOST}
       - DB_NAME=${DB_NAME}
 
-  mongodb:
-    image: mongo:latest
-    container_name: mongodb
+  couchdb:
+    image: couchdb:3
+    container_name: couchdb
     restart: always
     ports:
-      - "27017:27017"
+      - "${DB_PORT}:${DB_PORT}"
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${DB_USER}
-      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
+      COUCHDB_USER: ${DB_USER}
+      COUCHDB_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - mongo_data:/data/db
+      - couchdb_data:/opt/couchdb/data
 
 volumes:
-  mongo_data:
+  couchdb_data:
+
+    #   mongodb:
+    #     image: mongo:latest
+    #     container_name: mongodb
+    #     restart: always
+    #     ports:
+    #       - "27017:27017"
+    #     environment:
+    #       MONGO_INITDB_ROOT_USERNAME: ${DB_USER}
+    #       MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
+    #     volumes:
+    #       - mongo_data:/data/db
+
+    # volumes:
+    #   mongo_data:
