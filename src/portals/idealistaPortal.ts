@@ -45,7 +45,12 @@ export class IdealistaPortal implements IPortal {
 
                 await this._browser.open();
                 await this._browser.goto(url);
+
+                await this._browser.screenshot('./screenshots/idealista-getads-aftergoto.png');
+
                 await this.beforeGetAds();
+
+                await this._browser.screenshot('./screenshots/idealista-getads-afterbeforegetads.png');
 
                 data.push(await this.scrapingAdsList(date));
 
@@ -63,7 +68,7 @@ export class IdealistaPortal implements IPortal {
         }
         catch (error) {
 
-            await this._browser.screenshot('idealista-getads-error.png');
+            await this._browser.screenshot('./screenshots/idealista-getads-error.png');
             throw error;
 
         }

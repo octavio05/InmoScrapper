@@ -6,6 +6,7 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+/screenshots
 .env.development
 .env.production
 package-lock.json
