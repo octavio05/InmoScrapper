@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright:v1.56.1-jammy
+FROM mcr.microsoft.com/playwright:v1.57.0-jammy
 
 # Establece el directorio de trabajo
 WORKDIR /app

@@ -61,22 +61,15 @@ export class CouchDbAdapter implements DatabaseAdapter {
 
         const database = this._connection?.db.use<Ad>(this._config!.dbName);
         let ad;
-        try {
 
-            ad = (await database!.find({
-                selector: {
-                    Id: newAd.Id,
-                    Portal: newAd.Portal
-                }
-            })).docs[0];
-        }
-        catch (error) {
+        ad = (await database!.find({
+            selector: {
+                Id: newAd.Id,
+                Portal: newAd.Portal
+            }
+        })).docs[0];
 
-            ad = null;
-
-        }
-
-        if (ad === null)
+        if (!ad)
             ad = newAd;
         else
             ad.Price.push(newAd.Price[0]);
