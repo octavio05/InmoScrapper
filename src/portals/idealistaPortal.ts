@@ -61,6 +61,12 @@ export class IdealistaPortal implements IPortal {
             } while (nextPage !== null);
 
         }
+        catch (error) {
+
+            await this._browser.screenshot('idealista-getads-error.png');
+            throw error;
+
+        }
         finally {
 
             if (this._browser.isOpen())
