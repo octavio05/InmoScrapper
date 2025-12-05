@@ -4,7 +4,7 @@ import { Config } from './interfaces/config';
 import { Logger } from './logger';
 
 const log = new Logger(path.resolve(process.cwd(), 'logs'));
-const envFile = `.env.${process.env.NODE_ENV || 'development'}`;
+const envFile = `../.env.${process.env.NODE_ENV || 'development'}`;
 dotenv.config({ path: path.resolve(process.cwd(), envFile) });
 
 function requireEnv(key: string): string {
@@ -27,5 +27,5 @@ export const config: Config = {
     DB_PORT: parseInt(requireEnv('DB_PORT')),
     DB_HOST: requireEnv('DB_HOST'),
     DB_NAME: requireEnv('DB_NAME'),
-    
+
 }

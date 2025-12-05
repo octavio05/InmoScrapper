@@ -4,13 +4,13 @@ FROM mcr.microsoft.com/playwright:v1.57.0-jammy
 WORKDIR /app
 
 # Copia los archivos de configuración
-COPY package*.json tsconfig.json ./
+COPY ./scraper/package*.json ./scraper/tsconfig.json ./
 
 # Instalación de dependencias
 RUN npm install
 
 # Copia el código fuente
-COPY src ./src
+COPY ./scraper/src ./src
 
 # Comando por defecto
 ARG NODE_ENV

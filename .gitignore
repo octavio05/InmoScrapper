@@ -9,6 +9,7 @@ node_modules/
 /screenshots
 .env.development
 .env.production
+.env.local
 package-lock.json
 logs
 tests

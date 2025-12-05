@@ -2,7 +2,7 @@ services:
 
   scraper:
     build:
-      dockerfile: Dockerfile
+      dockerfile: ./scraper/Dockerfile
       context: .
       args:
         - NODE_ENV=${NODE_ENV}
@@ -11,9 +11,9 @@ services:
       # - mongodb
       - couchdb
     volumes:
-      - ./logs:/app/logs
-      - ./src:/app/src
-      - ./screenshots:/app/screenshots
+      - ./scraper/logs:/app/logs
+      - ./scraper/src:/app/src
+      - ./scraper/screenshots:/app/screenshots
       - /app/node_modules
     security_opt:
       - seccomp:unconfined
