@@ -84,35 +84,37 @@ export class FotocasaPortal implements IPortal {
     }
 
     private async scrapingAdsList(date: Date): Promise<Ad[]> {
+        const adsElements: BrowserElement[] = await this._browser.getElements('#main-content article');
+        const uniqueAdsMap = new Map<string, Ad>();
 
-        const ads: BrowserElement[] = await this._browser.getElements('#main-content article');
-        return await Promise.all(
-            ads.map(async a => {
-
+        await Promise.all(
+            adsElements.map(async a => {
                 const match = (await a.getElement('.w-full h3 > a')?.getAttribute('href'))?.match(/\/(\d+)\//);
                 const Id = match ? match[1] : '';
 
-                const Direction = (await a.getElement('.w-full h3 > a > span')?.textContent() || '').trim().replace(/<[^>]+>/g, '');
+                if (Id) {
+                    const Direction = (await a.getElement('.w-full h3 > a > span')?.textContent() || '').trim().replace(/<[^>]+>/g, '');
+                    const priceHtml = (await a.getElement('.w-full div > span')?.textContent())?.trim().replace(/<[^>]*>/g, '').replace(/[^\d]/g, '');
+                    const priceValue = priceHtml ? parseInt(priceHtml) : null;
 
-                const priceHtml = (await a.getElement('.w-full div > span')?.textContent())?.trim().replace(/<[^>]*>/g, '').replace(/[^\d]/g, '');
-                const priceValue = priceHtml ? parseInt(priceHtml) : null;
-
-                return {
-                    'Portal': PortalType.FOTOCASA,
-                    'Property': PropertyType.GARAGE,
-                    Id,
-                    Direction,
-                    'Description': '',
-                    'Features': [],
-                    'Images': [],
-                    'Price': [{
-                        'value': priceValue,
-                        'date': date
-                    }]
-                };
+                    uniqueAdsMap.set(Id, {
+                        'Portal': PortalType.FOTOCASA,
+                        'Property': PropertyType.GARAGE,
+                        Id,
+                        Direction,
+                        'Description': '',
+                        'Features': [],
+                        'Images': [],
+                        'Price': [{
+                            'value': priceValue,
+                            'date': date
+                        }]
+                    });
+                }
             })
         );
 
+        return Array.from(uniqueAdsMap.values());
     }
 
     /**
