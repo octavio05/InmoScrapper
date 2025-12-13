@@ -1,0 +1,17 @@
+{
+    "name": "inmo-scrapper",
+    "private": true,
+    "scripts": {
+        "scraper:build:docker:development": "pnpm --filter scraper build:docker:development",
+        "scraper:build:docker:production": "pnpm --filter scraper build:docker:production",
+        "scraper:start:development": "pnpm --filter scraper start:development",
+        "scraper:start:production": "pnpm --filter scraper start:production",
+        "scraper:start:local": "pnpm --filter scraper start:local",
+        "scraper:start:docker:development": "pnpm --filter scraper start:docker:development",
+        "scraper:start:docker:production": "pnpm --filter scraper start:docker:production",
+        "scraperview:start": "pnpm --filter scraper-view start",
+        "scraperview:build": "pnpm --filter scraper-view build"
+    },
+    "dependencies": {},
+    "devDependencies": {}
+}
