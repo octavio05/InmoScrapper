@@ -7,7 +7,8 @@ WORKDIR /app
 COPY ./scraper/package*.json ./scraper/tsconfig.json ./
 
 # Instalación de dependencias
-RUN npm install
+RUN npm install -g pnpm
+RUN pnpm install
 
 # Copia el código fuente
 COPY ./scraper/src ./src
