@@ -1,9 +1,13 @@
 import { Routes } from '@angular/router';
-import { LineChartCoponent } from './lineChart/line-chart-coponent';
+import { ChartsPageComponent } from './pages/charts-page.component/charts-page.component';
 
 export const routes: Routes = [
     {
         path: '',
-        component: LineChartCoponent
+        component: ChartsPageComponent
+    },
+    {
+        path: '**',
+        redirectTo: ''
     }
 ];

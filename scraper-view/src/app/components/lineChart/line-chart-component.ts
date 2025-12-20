@@ -1,20 +1,22 @@
-import { Component, signal } from '@angular/core';
-import { ChartConfiguration, ChartOptions } from 'chart.js';
+import { Component, inject, signal } from '@angular/core';
 import { BaseChartDirective } from 'ng2-charts';
+import { AdService } from '../../services/ad.service';
 
 @Component({
-  selector: 'app-line-chart-coponent',
+  selector: 'line-chart-component',
   imports: [BaseChartDirective],
-  templateUrl: './line-chart-coponent.html',
-  styleUrl: './line-chart-coponent.css',
+  templateUrl: './line-chart-component.html',
+  styleUrl: './line-chart-component.css',
 })
-export class LineChartCoponent {
+export class LineChartComponent {
+
+  public adServices = inject(AdService);
 
   public data = signal(
     {
       datasets: [
         {
-          data: [10, 50, 30, 70, 45, 90],
+          data: this.adServices.data(),
           label: 'Ventas 2024',
           borderColor: 'blue',
           backgroundColor: 'rgba(0, 0, 255, 0.2)',

@@ -16,3 +16,5 @@ tests
 .vscode
 .github
 scraper/dist/
+scraper-view/dist/
+scraper-view/.angular/
