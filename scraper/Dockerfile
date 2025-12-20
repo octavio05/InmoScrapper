@@ -4,14 +4,14 @@ FROM mcr.microsoft.com/playwright:v1.57.0-jammy
 WORKDIR /app
 
 # Copia los archivos de configuración
-COPY ./scraper/package*.json ./scraper/tsconfig.json ./
+COPY package*.json tsconfig.json pnpm-lock.yaml ./
 
 # Instalación de dependencias
 RUN npm install -g pnpm
-RUN pnpm install
+RUN pnpm install --frozen-lockfile
 
 # Copia el código fuente
-COPY ./scraper/src ./src
+COPY src ./src
 
 # Comando por defecto
 ARG NODE_ENV

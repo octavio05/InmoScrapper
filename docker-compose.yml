@@ -2,8 +2,8 @@ services:
 
   scraper:
     build:
-      dockerfile: ./scraper/Dockerfile
-      context: .
+      dockerfile: Dockerfile
+      context: ./scraper
       args:
         - NODE_ENV=${NODE_ENV}
     container_name: scraper
@@ -25,6 +25,16 @@ services:
       - DB_PORT=${DB_PORT}
       - DB_HOST=${DB_HOST}
       - DB_NAME=${DB_NAME}
+
+  scraper-view:
+    build:
+      context: ./scraper-view
+      dockerfile: Dockerfile
+    container_name: scraper-view
+    ports:
+      - "8080:80"
+    depends_on:
+      - couchdb
 
   couchdb:
     image: couchdb:3

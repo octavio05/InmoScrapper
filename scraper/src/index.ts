@@ -3,7 +3,7 @@ import { PlaywrightAdapter } from './adapters/playwright/playwrightAdapter';
 import { IdealistaPortal } from './portals/idealistaPortal';
 import { Ad } from './interfaces/ad';
 import { DatabaseAdapter } from './interfaces/databaseAdapter';
-import { MongoDbAdapter } from './adapters/mongoDbAdapter';
+// import { MongoDbAdapter } from './adapters/mongoDbAdapter';
 import { IAdRepository } from './interfaces/adRepository';
 import { AdRepository } from './repositories/adRepository';
 import { FotocasaPortal } from './portals/fotocasaPortal';

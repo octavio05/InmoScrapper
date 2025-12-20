@@ -12,5 +12,8 @@
         "*.ts",
         "src/*.ts",
         "src/**/*.ts"
+    ],
+    "exclude": [
+        "src/adapters/mongoDbAdapter.ts"
     ]
 }
