@@ -2,7 +2,10 @@ import { PortalType } from "../enums/portalType";
 import { PropertyType } from "../enums/propertyType";
 
 export interface Ad {
-    Portal: PortalType;
+    Portal: {
+        Type: PortalType;
+        Url: string;
+    };
     Property: PropertyType;
     Id: string;
     Direction: string;

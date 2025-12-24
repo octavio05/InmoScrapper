@@ -95,7 +95,10 @@ export class IdealistaPortal implements IPortal {
             ads
                 .filter(async a => await a.getAttribute('data-element-id') !== undefined)
                 .map(async a => ({
-                    'Portal': PortalType.IDEALISTA,
+                    'Portal': {
+                        'Type': PortalType.IDEALISTA,
+                        'Url': `https://www.idealista.com/inmueble/${await a.getAttribute('data-element-id')!}/`
+                    },
                     'Property': PropertyType.GARAGE,
                     'Id': await a.getAttribute('data-element-id')! || '',
                     'Direction': (await a.getElement('.item-info-container > a').textContent())?.trim() || '',

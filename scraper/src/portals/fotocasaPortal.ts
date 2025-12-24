@@ -96,9 +96,13 @@ export class FotocasaPortal implements IPortal {
                     const Direction = (await a.getElement('.w-full h3 > a > span')?.textContent() || '').trim().replace(/<[^>]+>/g, '');
                     const priceHtml = (await a.getElement('.w-full div > span')?.textContent())?.trim().replace(/<[^>]*>/g, '').replace(/[^\d]/g, '');
                     const priceValue = priceHtml ? parseInt(priceHtml) : null;
+                    const url = `https://fotocasa.es${(await a.getElement('.w-full h3 > a')?.getAttribute('href')) || ''}`;
 
                     uniqueAdsMap.set(Id, {
-                        'Portal': PortalType.FOTOCASA,
+                        'Portal': {
+                            'Type': PortalType.FOTOCASA,
+                            'Url': url
+                        },
                         'Property': PropertyType.GARAGE,
                         Id,
                         Direction,

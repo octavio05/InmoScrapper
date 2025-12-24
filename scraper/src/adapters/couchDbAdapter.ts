@@ -65,14 +65,18 @@ export class CouchDbAdapter implements DatabaseAdapter {
         ad = (await database!.find({
             selector: {
                 Id: newAd.Id,
-                Portal: newAd.Portal
+                'Portal.Type': newAd.Portal.Type
             }
         })).docs[0];
 
         if (!ad)
             ad = newAd;
         else
-            ad.Price.push(newAd.Price[0]);
+            ad = {
+                ...ad,
+                ...newAd,
+                Price: [...ad.Price, ...newAd.Price]
+            };
 
         await database?.insert(ad);
 
