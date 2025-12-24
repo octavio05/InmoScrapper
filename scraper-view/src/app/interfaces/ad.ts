@@ -3,7 +3,10 @@ import { PropertyType } from "../enums/propertyType";
 
 export interface Ad {
     PortalId: string;
-    Portal: PortalType;
+    Portal: {
+        Type: PortalType;
+        Url: string
+    };
     Property: PropertyType;
     Id: string;
     Direction: string;
@@ -11,7 +14,6 @@ export interface Ad {
     PriceAverage: number;
     CreationDate: Date;
     LastUpdateDate: Date;
-    PortalUrl: string;
 }
 
 export interface Price {

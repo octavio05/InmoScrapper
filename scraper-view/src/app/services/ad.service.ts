@@ -31,11 +31,10 @@ export class AdService {
                     Price: row.doc.Price,
                     PriceAverage: this.calculateAverage(row.doc.Price),
                     CreationDate: this.getOldestPriceDate(row.doc.Price),
-                    LastUpdateDate: this.getLastUpdateDate(row.doc.Price),
-                    PortalUrl: row.doc.Portal as PortalType === PortalType.IDEALISTA ? `https://www.idealista.com/inmueble/${row.doc.Id}` : `https://www.fotocasa.es/es/alquiler/garaje/telde/${row.doc.PortalId}/d`
+                    LastUpdateDate: this.getLastUpdateDate(row.doc.Price)
                 }
             }))
-        )
+        );
 
     }
 

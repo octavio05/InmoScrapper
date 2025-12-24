@@ -57,9 +57,9 @@
                     {{ ad.Direction }}
                 </td>
                 <td class="px-6 py-4">
-                    <a [href]="ad.PortalUrl" target="_blank">
+                    <a [href]="ad.Portal.Url" target="_blank">
                         <div class="flex flex-row">
-                            <span class="mr-1">{{ ad.Portal }}</span>
+                            <span class="mr-1">{{ ad.Portal.Type }}</span>
                             <lucide-icon [img]="ExternalLinkIcon" size="14px"></lucide-icon>
                         </div>
                     </a>
