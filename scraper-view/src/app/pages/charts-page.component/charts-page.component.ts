@@ -1,9 +1,9 @@
 import { Component } from '@angular/core';
-import { LineChartComponent } from '../../components/lineChart/line-chart-component';
+import { ShowAdsComponent } from '../../components/showAds/show-ads.component';
 
 @Component({
   selector: 'app-charts-page.component',
-  imports: [LineChartComponent],
+  imports: [ShowAdsComponent],
   templateUrl: './charts-page.component.html',
   styleUrl: './charts-page.component.css',
 })
