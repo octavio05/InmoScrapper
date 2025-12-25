@@ -19,7 +19,19 @@ export class LineChartComponent {
 
     this.data().forEach(ad => {
 
-      labels = [...new Set([...labels, ...ad.Price.map(price => (price.date || 'Unknown').toString())])];
+      labels = [...new Set([...labels, ...ad.Price.map(
+        price => (
+          price.date.toLocaleDateString('es-ES', {
+            year: 'numeric',
+            month: 'numeric',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+          }) || 'Unknown'
+        )
+      )])];
+
       datasets.push({
         data: ad.Price.map(price => price.value || 0),
         label: ad.Direction || 'Unknown',

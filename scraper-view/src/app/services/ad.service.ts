@@ -2,7 +2,6 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
 import { Ad, Price } from '../interfaces/ad';
 import { map, Observable } from 'rxjs';
-import { PortalType } from '../enums/portalType';
 import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -23,12 +22,12 @@ export class AdService {
         return this.http.get<Ad[]>(url, { headers: this.headers }).pipe(
             map((response: any) => response.rows.map((row: any) => {
                 return {
-                    PortalId: row.doc.Id,
+                    PortalId: row.Id,
                     Portal: row.doc.Portal,
                     Property: row.doc.Property,
                     Id: row.doc._id,
                     Direction: row.doc.Direction,
-                    Price: row.doc.Price,
+                    Price: row.doc.Price.map((p: any) => ({ ...p, date: new Date(p.date) })),
                     PriceAverage: this.calculateAverage(row.doc.Price),
                     CreationDate: this.getOldestPriceDate(row.doc.Price),
                     LastUpdateDate: this.getLastUpdateDate(row.doc.Price)
@@ -57,7 +56,7 @@ export class AdService {
         if (!prices || prices.length === 0)
             return null;
 
-        return prices.reduce((a, b) => a.date < b.date ? a : b).date;
+        return new Date(prices.reduce((a, b) => a.date < b.date ? a : b).date);
 
     }
 

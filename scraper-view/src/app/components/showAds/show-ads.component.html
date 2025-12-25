@@ -14,29 +14,22 @@
                 placeholder="Search">
         </div>
     </div>
-    <table class="w-full text-sm text-left rtl:text-right text-body">
+    <table id="adsTable" class="w-full text-sm text-left rtl:text-right text-body">
         <thead class="text-sm text-body bg-neutral-secondary-medium border-b border-t border-default-medium">
             <tr>
                 <th scope="col" class="p-4">
                 </th>
+                @for (header of header(); track header.Name) {
                 <th scope="col" class="px-6 py-3 font-medium">
-                    Tipo
+                    <div (click)="sortAds(header.AdName, header.Sort === 'asc' ? 'desc' : 'asc')"
+                        class="flex flex-row items-center">
+                        <span class="mr-1">{{ header.Name }}</span>
+                        <lucide-icon
+                            [img]="header.Sort === 'asc' ? ChevronUpIcon : header.Sort === 'desc' ? ChevronDownIcon : ChevronsUpDownIcon"
+                            size="16px"></lucide-icon>
+                    </div>
                 </th>
-                <th scope="col" class="px-6 py-3 font-medium">
-                    Dirección
-                </th>
-                <th scope="col" class="px-6 py-3 font-medium">
-                    Portal
-                </th>
-                <th scope="col" class="px-6 py-3 font-medium">
-                    Precio promedio
-                </th>
-                <th scope="col" class="px-6 py-3 font-medium">
-                    Fecha creación
-                </th>
-                <th scope="col" class="px-6 py-3 font-medium">
-                    Fecha última actualización
-                </th>
+                }
             </tr>
         </thead>
         <tbody>
@@ -58,7 +51,7 @@
                 </td>
                 <td class="px-6 py-4">
                     <a [href]="ad.Portal.Url" target="_blank">
-                        <div class="flex flex-row">
+                        <div class="flex flex-row items-center">
                             <span class="mr-1">{{ ad.Portal.Type }}</span>
                             <lucide-icon [img]="ExternalLinkIcon" size="14px"></lucide-icon>
                         </div>

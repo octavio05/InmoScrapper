@@ -12,7 +12,7 @@ export interface Ad {
     Direction: string;
     Price: Price[];
     PriceAverage: number;
-    CreationDate: Date;
+    CreationDate: Date | null;
     LastUpdateDate: Date;
 }
 
