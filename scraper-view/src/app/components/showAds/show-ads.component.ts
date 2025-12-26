@@ -5,6 +5,8 @@ import { LineChartComponent } from '../lineChart/line-chart.component';
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { ExternalLink, ChevronsUpDown, ChevronDown, ChevronUp, LucideAngularModule } from 'lucide-angular';
 import { AdsHeader } from '../../interfaces/adsHeader';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 @Component({
   selector: 'show-ads',
@@ -13,7 +15,8 @@ import { AdsHeader } from '../../interfaces/adsHeader';
     CurrencyPipe,
     DatePipe,
     CommonModule,
-    LucideAngularModule
+    LucideAngularModule,
+    ReactiveFormsModule
   ],
   templateUrl: './show-ads.component.html',
   styleUrl: './show-ads.component.css',
@@ -40,18 +43,32 @@ export class ShowAdsComponent {
     { Name: 'Fecha creación', Sort: 'desc', AdName: 'CreationDate' },
     { Name: 'Fecha última actualización', Sort: '', AdName: 'LastUpdateDate' },
   ]);
+  public searchControl = new FormControl('');
 
   private allAds: Ad[] = [];
+  private shownAds: Ad[] = [];
+
+  ngOnInit() {
+    this.searchControl.valueChanges
+      .pipe(
+        debounceTime(500),
+        distinctUntilChanged()
+      )
+      .subscribe((value) => {
+        this.searchAds(value);
+        this.refreshPagination();
+        this.refreshAds();
+      });
+  }
 
   constructor() {
 
     this.adsService.getAds().subscribe((ads) => {
 
       this.allAds = ads;
+      this.shownAds = ads;
       this.sortAds('CreationDate', 'desc');
-      this.currentPage.set(0);
-      this.totalPages.set(Math.ceil(this.allAds.length / 5));
-      this.totalAds.set(this.allAds.length);
+      this.refreshPagination();
       this.refreshAds();
 
     });
@@ -66,7 +83,7 @@ export class ShowAdsComponent {
     if (page < 0 || page >= this.totalPages()) return;
 
     this.currentPage.set(page);
-    this.pagedAds.set(this.allAds.slice(page * 5, (page + 1) * 5));
+    this.pagedAds.set(this.shownAds.slice(page * 5, (page + 1) * 5));
   }
 
   toggleSelectedAd(newAd: Ad) {
@@ -96,7 +113,7 @@ export class ShowAdsComponent {
 
     }));
 
-    this.allAds = this.allAds.sort((a, b) => {
+    this.shownAds = this.shownAds.sort((a, b) => {
 
       const valueA = this.getNestedValue(a, adName);
       const valueB = this.getNestedValue(b, adName);
@@ -130,5 +147,21 @@ export class ShowAdsComponent {
 
   }
 
-}
+  private refreshPagination() {
 
+    this.currentPage.set(0);
+    this.totalPages.set(Math.ceil(this.shownAds.length / 5));
+    this.totalAds.set(this.shownAds.length);
+
+  }
+
+  private searchAds(value: string | null) {
+
+    this.shownAds = this.allAds.filter(ad =>
+      [ad.Property, ad.Direction, ad.Portal.Type, ad.PriceAverage.toString(), ad.CreationDate.toString(), ad.LastUpdateDate.toString()]
+        .some(field => field.toLowerCase().includes(value!.toLowerCase()))
+    );
+
+  }
+
+}
