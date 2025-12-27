@@ -1,12 +1,14 @@
 import { Component, inject, signal } from '@angular/core';
 import { AdService } from '../../services/ad.service';
-import { Ad } from '../../interfaces/ad';
+import { Ad, Price } from '../../interfaces/ad';
 import { LineChartComponent } from '../lineChart/line-chart.component';
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { ExternalLink, ChevronsUpDown, ChevronDown, ChevronUp, LucideAngularModule } from 'lucide-angular';
 import { AdsHeader } from '../../interfaces/adsHeader';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { PortalType } from '../../enums/portalType';
+import { PropertyType } from '../../enums/propertyType';
 
 @Component({
   selector: 'show-ads',
@@ -70,6 +72,9 @@ export class ShowAdsComponent {
       this.sortAds('CreationDate', 'desc');
       this.refreshPagination();
       this.refreshAds();
+
+      const av = this.calculateAveragePricePerDate(this.shownAds);
+      this.selectedAds.set([...this.selectedAds(), ...av]);
 
     });
 
@@ -161,6 +166,56 @@ export class ShowAdsComponent {
       [ad.Property, ad.Direction, ad.Portal.Type, ad.PriceAverage.toString(), ad.CreationDate.toString(), ad.LastUpdateDate.toString()]
         .some(field => field.toLowerCase().includes(value!.toLowerCase()))
     );
+
+  }
+
+  private calculateAveragePricePerDate(ads: Ad[]): Ad[] {
+
+    const pricesPerDate =
+      Object.entries(
+        ads
+          .flatMap(ad => ad.Price)
+          .reduce((acc: Record<string, number[]>, price) => {
+
+            const dateKey = price.date.toISOString();
+
+            if (price.value !== null) {
+
+              if (!acc[dateKey])
+                acc[dateKey] = [];
+
+              acc[dateKey].push(price.value);
+
+            }
+
+            return acc;
+
+          }, {} as Record<string, number[]>)
+      )
+        .map(([dateString, prices]: [string, number[]]): Price => {
+
+          return {
+            date: new Date(dateString),
+            value: prices.reduce((acc, price) => acc + price, 0) / prices.length,
+          }
+
+        })
+        .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    return [{
+      PortalId: '',
+      Portal: {
+        Type: PortalType.NOT_DEFINED,
+        Url: ''
+      },
+      Property: PropertyType.NOT_DEFINED,
+      Id: '',
+      Direction: 'Media',
+      Price: pricesPerDate,
+      PriceAverage: 0,
+      CreationDate: new Date(),
+      LastUpdateDate: new Date(),
+    }];
 
   }
 

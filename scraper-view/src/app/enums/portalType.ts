@@ -1,4 +1,5 @@
 export enum PortalType {
     IDEALISTA = "idealista",
-    FOTOCASA = "fotocasa"
+    FOTOCASA = "fotocasa",
+    NOT_DEFINED = "not_defined"
 }

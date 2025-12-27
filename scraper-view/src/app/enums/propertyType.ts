@@ -1,3 +1,4 @@
 export enum PropertyType {
-    GARAGE = "garage"
+    GARAGE = "garage",
+    NOT_DEFINED = "not_defined"
 }

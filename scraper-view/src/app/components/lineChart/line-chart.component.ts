@@ -14,6 +14,14 @@ export class LineChartComponent {
 
   public chartConfiguration = computed(() => {
 
+    const dateFormatOptions: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: 'numeric',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    };
     let labels: string[] = [];
     let datasets: any[] = [];
 
@@ -21,14 +29,7 @@ export class LineChartComponent {
 
       labels = [...new Set([...labels, ...ad.Price.map(
         price => (
-          price.date.toLocaleDateString('es-ES', {
-            year: 'numeric',
-            month: 'numeric',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-          }) || 'Unknown'
+          price.date.toLocaleDateString('es-ES', dateFormatOptions) || 'Unknown'
         )
       )])];
 
@@ -37,8 +38,8 @@ export class LineChartComponent {
         label: ad.Direction || 'Unknown',
         fill: true,
         tension: 0.3,
+        spanGaps: true // Permite conectar puntos aunque falten datos intermedios
       });
-
     });
 
     return {
