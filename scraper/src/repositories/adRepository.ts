@@ -1,6 +1,7 @@
 import { Ad } from "../interfaces/ad";
 import { DatabaseAdapter } from "../interfaces/databaseAdapter";
 import { IAdRepository } from "../interfaces/adRepository";
+import { PortalType } from "../enums/portalType";
 
 /**
  * MongoAdRepository class that implements the AdRepository interface.
@@ -31,6 +32,28 @@ export class AdRepository implements IAdRepository {
 
             for (const ad of ads)
                 await this._databaseManager.addOrUpdate(ad);
+
+        } finally {
+
+            await this._databaseManager.disconnect();
+
+        }
+
+    }
+
+    /**
+     * Gets an ad from the database.
+     * @param id Ad ID.
+     * @param portalType Portal type.
+     * @returns Ad object or null if not found.
+     */
+    public async get(id: string, portalType: PortalType): Promise<Ad | null> {
+
+        await this._databaseManager.connect();
+
+        try {
+
+            return await this._databaseManager.get(id, portalType);
 
         } finally {
 

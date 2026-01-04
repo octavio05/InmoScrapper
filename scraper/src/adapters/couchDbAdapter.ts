@@ -2,6 +2,7 @@ import nano from "nano";
 import { Ad } from "../interfaces/ad";
 import { DatabaseAdapter } from "../interfaces/databaseAdapter";
 import { DatabaseConfig } from "../interfaces/databaseConfig";
+import { PortalType } from "../enums/portalType";
 
 /**
  * Adapter for CouchDB
@@ -79,6 +80,27 @@ export class CouchDbAdapter implements DatabaseAdapter {
             };
 
         await database?.insert(ad);
+
+    }
+
+    /**
+     * Gets an ad from the database
+     * @param id Ad id
+     * @param portalType Portal type
+     * @returns Ad or null
+     * @throws Error if the connection is not established.
+     */
+    public async get(id: string, portalType: PortalType): Promise<Ad | null> {
+
+        const database = this._connection?.db.use<Ad>(this._config!.dbName);
+        const ad = (await database!.find({
+            selector: {
+                Id: id,
+                'Portal.Type': portalType
+            }
+        })).docs[0];
+
+        return ad;
 
     }
 
