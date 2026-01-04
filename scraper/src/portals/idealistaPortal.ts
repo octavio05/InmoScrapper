@@ -5,6 +5,7 @@ import { PropertyType } from "../enums/propertyType";
 import { BrowserAdapter } from "../interfaces/browserAdapter";
 import { BrowserElement } from "../interfaces/browserElement";
 import { PortalUrl } from "../interfaces/portalDefinition";
+import { ILogger } from "../interfaces/logger";
 
 /**
  * IdealistaPortal class that implements the Portal interface.
@@ -13,18 +14,25 @@ import { PortalUrl } from "../interfaces/portalDefinition";
 export class IdealistaPortal implements IPortal {
 
     private readonly _browser: BrowserAdapter;
+    private readonly _log: ILogger;
 
     /**
      * Constructor for IdealistaPortal.
      * @param browser BrowserAdapter object.
+     * @param log ILogger object.
      * @throws Error if browser is null or undefined.
+     * @throws Error if log is null or undefined.
      */
-    constructor(browser: BrowserAdapter) {
+    constructor(browser: BrowserAdapter, log: ILogger) {
 
         if (!browser)
             throw new Error('Browser cannot be null or undefined');
 
+        if (!log)
+            throw new Error('Logger cannot be null or undefined');
+
         this._browser = browser;
+        this._log = log;
 
     }
 
@@ -210,26 +218,38 @@ export class IdealistaPortal implements IPortal {
      */
     private async beforeGetAds(): Promise<void> {
 
-        // Esperar a que el modal esté visible
-        await this._browser.waitForSelector('#didomi-notice-agree-button',
-            { timeout: 10000 });
+        try {
 
-        // Esperar a que sea clickeable (no bloqueado)
-        const button: BrowserElement | null = await this._browser.getElement('#didomi-notice-agree-button');
+            // Esperar a que el modal esté visible
+            await this._browser.waitForSelector('#didomi-notice-agree-button',
+                { timeout: 10000 });
 
-        // Scroll para asegurar visibilidad
-        await button!.scrollIntoViewIfNeeded();
+            // Esperar a que sea clickeable (no bloqueado)
+            const button: BrowserElement | null = await this._browser.getElement('#didomi-notice-agree-button');
 
-        // Delay antes de click
-        await this._browser.waitForTimeout(2000);
+            // Scroll para asegurar visibilidad
+            await button!.scrollIntoViewIfNeeded();
 
-        // Click con força
+            // Delay antes de click
+            await this._browser.waitForTimeout(2000);
 
-        await button!.click({ force: true });
+            // Click con força
 
-        // Esperar a que desaparezca el modal
-        await this._browser.waitForSelector('#didomi-host',
-            { state: 'hidden', timeout: 5000 });
+            await button!.click({ force: true });
+
+            // Esperar a que desaparezca el modal
+            await this._browser.waitForSelector('#didomi-host',
+                { state: 'hidden', timeout: 5000 });
+
+        }
+        catch (error) {
+
+            this._log.error(
+                `Error produced on 'idealistaPortals.beforeGetAds' and continues:\n` +
+                `${(error as Error).stack}`
+            );
+
+        }
 
         await this._browser.waitForTimeout(2000);
 

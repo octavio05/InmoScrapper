@@ -102,12 +102,13 @@ function createScrappingFunction(definition: PortalDefinition, log: ILogger): ()
     return async function (): Promise<Ad[]> {
 
         const browser: BrowserAdapter = new PlaywrightAdapter();
-        const portal: IPortal = new definition.portal(browser);
+        const portal: IPortal = new definition.portal(browser, log);
         let data: Ad[] = [];
 
         try {
 
             data = await portal.getAds(definition.url);
+            log.info(`Scrapping proccess finished to ${definition.portal.name}: ${data.length} ads.`);
 
         }
         catch (error) {
