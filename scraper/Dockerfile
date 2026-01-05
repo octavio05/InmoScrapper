@@ -15,4 +15,4 @@ COPY src ./src
 
 # Comando por defecto
 ARG NODE_ENV
-CMD npm run start:docker:${NODE_ENV}
+CMD ["/bin/sh", "-c", "exec npm run start:docker:${NODE_ENV}"]
