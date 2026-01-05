@@ -8,7 +8,9 @@ import { environment } from '../../environments/environment';
 export class AdService {
 
     private http = inject(HttpClient);
-    private baseUrl = `http://${environment.DbHost}:${environment.DbPort}/${environment.DbName}/`;
+    private baseUrl = environment.Environment === 'local' ?
+        `http://${environment.DbHost}:${environment.DbPort}/${environment.DbName}/` :
+        `/couchdb/${environment.DbName}/`;
     private headers = new HttpHeaders({
         'Authorization': `Basic ${btoa(`${environment.DbUser}:${environment.DbPassword}`)}`,
         'Content-Type': 'application/json'
@@ -17,7 +19,7 @@ export class AdService {
     data = signal<number[]>([]);
 
     public getAds(): Observable<Ad[]> {
-
+        console.log('base url: ' + this.baseUrl);
         const url = this.baseUrl + '_all_docs?include_docs=true';
         return this.http.get<Ad[]>(url, { headers: this.headers }).pipe(
             map((response: any) => response.rows.map((row: any) => {

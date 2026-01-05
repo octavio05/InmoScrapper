@@ -16,7 +16,8 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 
 # Build the application
-RUN pnpm run build --configuration=production
+ARG NODE_ENV
+RUN pnpm run build:${NODE_ENV}
 
 # Stage 2: Serve the application with Nginx
 FROM nginx:alpine

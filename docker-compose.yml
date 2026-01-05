@@ -30,6 +30,8 @@ services:
     build:
       context: ./scraper-view
       dockerfile: Dockerfile
+      args:
+        - NODE_ENV=${NODE_ENV}
     container_name: scraper-view
     ports:
       - "8080:80"
