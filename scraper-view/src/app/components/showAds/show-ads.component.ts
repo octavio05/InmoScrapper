@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { AdService } from '../../services/ad.service';
-import { Ad, Price } from '../../interfaces/ad';
+import { Price } from '../../interfaces/price';
 import { LineChartComponent } from '../lineChart/line-chart.component';
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { ExternalLink, ChevronsUpDown, ChevronDown, ChevronUp, LucideAngularModule } from 'lucide-angular';
@@ -9,6 +9,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { PortalType } from '../../enums/portalType';
 import { PropertyType } from '../../enums/propertyType';
+import { Ad } from '../../models/ad.model';
 
 @Component({
   selector: 'show-ads',
@@ -74,7 +75,7 @@ export class ShowAdsComponent {
       this.refreshAds();
 
       const av = this.calculateAveragePricePerDate(this.shownAds);
-      this.selectedAds.set([...this.selectedAds(), ...av]);
+      this.selectedAds.set([...this.selectedAds(), av]);
 
     });
 
@@ -169,7 +170,7 @@ export class ShowAdsComponent {
 
   }
 
-  private calculateAveragePricePerDate(ads: Ad[]): Ad[] {
+  private calculateAveragePricePerDate(ads: Ad[]): Ad {
 
     const pricesPerDate =
       Object.entries(
@@ -202,7 +203,7 @@ export class ShowAdsComponent {
         })
         .sort((a, b) => a.date.getTime() - b.date.getTime());
 
-    return [{
+    return new Ad({
       PortalId: '',
       Portal: {
         Type: PortalType.NOT_DEFINED,
@@ -211,11 +212,8 @@ export class ShowAdsComponent {
       Property: PropertyType.NOT_DEFINED,
       Id: '',
       Direction: 'Media',
-      Price: pricesPerDate,
-      PriceAverage: 0,
-      CreationDate: new Date(),
-      LastUpdateDate: new Date(),
-    }];
+      Price: pricesPerDate
+    });
 
   }
 

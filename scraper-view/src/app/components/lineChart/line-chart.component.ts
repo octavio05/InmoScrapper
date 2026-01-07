@@ -1,6 +1,6 @@
 import { Component, computed, input, signal } from '@angular/core';
 import { BaseChartDirective } from 'ng2-charts';
-import { Ad } from '../../interfaces/ad';
+import { Ad } from '../../models/ad.model';
 
 @Component({
   selector: 'line-chart',

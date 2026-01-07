@@ -1,22 +1,24 @@
 import { PortalType } from "../enums/portalType";
 import { PropertyType } from "../enums/propertyType";
 
-export interface Ad {
+export interface AdDto {
     PortalId: string;
-    Portal: {
-        Type: PortalType;
-        Url: string
-    };
+    Portal: PortalDto;
     Property: PropertyType;
     Id: string;
     Direction: string;
-    Price: Price[];
+    Price: PriceDto[];
     PriceAverage: number;
     CreationDate: Date;
     LastUpdateDate: Date;
 }
 
-export interface Price {
+export interface PriceDto {
     value: number | null;
     date: Date;
+}
+
+export interface PortalDto {
+    Type: PortalType;
+    Url: string;
 }
