@@ -10,6 +10,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { PortalType } from '../../enums/portalType';
 import { PropertyType } from '../../enums/propertyType';
 import { Ad } from '../../models/ad.model';
+import { Dataset, LineChartData } from '../../interfaces/lineChartData';
 
 @Component({
   selector: 'show-ads',
@@ -34,7 +35,10 @@ export class ShowAdsComponent {
   public readonly ChevronUpIcon = ChevronUp;
 
   public pagedAds = signal<Ad[]>([]);
-  public selectedAds = signal<Ad[]>([]);
+  public lineChartData = signal<LineChartData>({
+    labels: [],
+    datasets: []
+  });
   public totalAds = signal(0);
   public totalPages = signal(0);
   public currentPage = signal(0);
@@ -49,7 +53,8 @@ export class ShowAdsComponent {
   public searchControl = new FormControl('');
 
   private allAds: Ad[] = [];
-  private shownAds: Ad[] = [];
+  private filteredAds: Ad[] = [];
+  private selectedAds: Ad[] = [];
 
   ngOnInit() {
     this.searchControl.valueChanges
@@ -69,13 +74,14 @@ export class ShowAdsComponent {
     this.adsService.getAds().subscribe((ads) => {
 
       this.allAds = ads;
-      this.shownAds = ads;
+      this.filteredAds = ads;
       this.sortAds('CreationDate', 'desc');
       this.refreshPagination();
       this.refreshAds();
 
-      const av = this.calculateAveragePricePerDate(this.shownAds);
-      this.selectedAds.set([...this.selectedAds(), av]);
+      const av = this.calculateAveragePricePerDate(this.filteredAds);
+      this.selectedAds.push(av);
+      this.lineChartData.set(this.convertAdToLineChartData(this.selectedAds));
 
     });
 
@@ -89,19 +95,22 @@ export class ShowAdsComponent {
     if (page < 0 || page >= this.totalPages()) return;
 
     this.currentPage.set(page);
-    this.pagedAds.set(this.shownAds.slice(page * 5, (page + 1) * 5));
+    this.pagedAds.set(this.filteredAds.slice(page * 5, (page + 1) * 5));
   }
 
   toggleSelectedAd(newAd: Ad) {
-    if (this.selectedAds().includes(newAd)) {
-      this.selectedAds.set(this.selectedAds().filter(ad => ad !== newAd));
+    if (this.selectedAds.includes(newAd)) {
+      this.selectedAds = this.selectedAds.filter(ad => ad !== newAd);
     } else {
-      this.selectedAds.set([...this.selectedAds(), newAd]);
+      this.selectedAds.push(newAd);
     }
+
+    this.lineChartData.set(this.convertAdToLineChartData(this.selectedAds));
+
   }
 
   adIsSelected(ad: Ad): boolean {
-    return this.selectedAds().includes(ad);
+    return this.selectedAds.includes(ad);
   }
 
   sortAds(adName: string, sortBy: 'asc' | 'desc') {
@@ -119,7 +128,7 @@ export class ShowAdsComponent {
 
     }));
 
-    this.shownAds = this.shownAds.sort((a, b) => {
+    this.filteredAds = this.filteredAds.sort((a, b) => {
 
       const valueA = this.getNestedValue(a, adName);
       const valueB = this.getNestedValue(b, adName);
@@ -156,14 +165,14 @@ export class ShowAdsComponent {
   private refreshPagination() {
 
     this.currentPage.set(0);
-    this.totalPages.set(Math.ceil(this.shownAds.length / 5));
-    this.totalAds.set(this.shownAds.length);
+    this.totalPages.set(Math.ceil(this.filteredAds.length / 5));
+    this.totalAds.set(this.filteredAds.length);
 
   }
 
   private searchAds(value: string | null) {
 
-    this.shownAds = this.allAds.filter(ad =>
+    this.filteredAds = this.allAds.filter(ad =>
       [ad.Property, ad.Direction, ad.Portal.Type, ad.PriceAverage.toString(), ad.CreationDate.toString(), ad.LastUpdateDate.toString()]
         .some(field => field.toLowerCase().includes(value!.toLowerCase()))
     );
@@ -172,13 +181,33 @@ export class ShowAdsComponent {
 
   private calculateAveragePricePerDate(ads: Ad[]): Ad {
 
+    console.log(ads
+      .flatMap(ad => ad.Price)
+      .reduce((acc: Record<string, number[]>, price) => {
+
+        const dateKey = price.date.toISOString().replace(/\.\d{3}Z$/, '');
+
+        if (price.value !== null) {
+
+          if (!acc[dateKey])
+            acc[dateKey] = [];
+
+          acc[dateKey].push(price.value);
+
+        }
+
+        return acc;
+
+      }, {} as Record<string, number[]>)
+    );
+
     const pricesPerDate =
       Object.entries(
         ads
           .flatMap(ad => ad.Price)
           .reduce((acc: Record<string, number[]>, price) => {
 
-            const dateKey = price.date.toISOString();
+            const dateKey = price.date.toISOString().replace(/\.\d{3}Z$/, '');
 
             if (price.value !== null) {
 
@@ -214,6 +243,59 @@ export class ShowAdsComponent {
       Direction: 'Media',
       Price: pricesPerDate
     });
+
+  }
+
+  private convertAdToLineChartData(selectedAds: Ad[]): LineChartData {
+
+    const dateFormatOptions: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    };
+
+    const dateMap = new Map<string, Date>();
+    selectedAds.flatMap(ad =>
+      ad.Price.map(price => price.date)
+    ).forEach(date => {
+      const dateStr = date.toLocaleDateString('es-ES', dateFormatOptions);
+      if (!dateMap.has(dateStr)) {
+        dateMap.set(dateStr, date);
+      }
+    });
+
+    const labels: string[] = Array.from(dateMap.entries())
+      .sort((a, b) => a[1].getTime() - b[1].getTime())
+      .map(entry => entry[0]);
+
+    const datasets: Dataset[] = Array.from(
+      selectedAds.map((ad, index) => {
+        const priceMap = new Map<string, number>();
+        ad.Price.forEach(price => {
+          const dateStr = price.date.toLocaleDateString('es-ES', dateFormatOptions);
+          priceMap.set(dateStr, price.value || 0);
+        });
+
+        const data = labels.map(label => priceMap.get(label) || 0);
+
+        return {
+          data,
+          label: ad.Direction || 'Unknown',
+          fill: false,
+          tension: 0.3,
+          spanGaps: true,
+          hidden: index === 0
+        }
+      })
+    );
+
+    return {
+      labels,
+      datasets
+    };
 
   }
 
