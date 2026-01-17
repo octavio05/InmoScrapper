@@ -21,6 +21,33 @@ export class LineChartComponent {
   public options = signal(
     {
       responsive: true,
+      plugins: {
+        legend: {
+          onClick: (e: any, legendItem: any, legend: any) => {
+
+            const index = legendItem.datasetIndex;
+            const ci = legend.chart;
+
+            const dataset = ci.data.datasets[index];
+            const uniqueId = dataset.id;
+
+            if (ci.isDatasetVisible(index)) {
+
+              ci.hide(index);
+              legendItem.hidden = true;
+
+            } else {
+
+              ci.show(index);
+              legendItem.hidden = false;
+
+            }
+
+            console.log(`Legend clicked (${uniqueId}): ${legendItem}`);
+
+          }
+        }
+      }
     }
   );
 

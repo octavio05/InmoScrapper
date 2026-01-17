@@ -264,6 +264,7 @@ export class ShowAdsComponent {
         return {
           data,
           label: ad.Direction || 'Unknown',
+          id: index === 0 ? '-1' : ad.Id,
           fill: false,
           tension: 0.3,
           spanGaps: true,
