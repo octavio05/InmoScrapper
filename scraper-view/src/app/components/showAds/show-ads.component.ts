@@ -181,26 +181,6 @@ export class ShowAdsComponent {
 
   private calculateAveragePricePerDate(ads: Ad[]): Ad {
 
-    console.log(ads
-      .flatMap(ad => ad.Price)
-      .reduce((acc: Record<string, number[]>, price) => {
-
-        const dateKey = price.date.toISOString().replace(/\.\d{3}Z$/, '');
-
-        if (price.value !== null) {
-
-          if (!acc[dateKey])
-            acc[dateKey] = [];
-
-          acc[dateKey].push(price.value);
-
-        }
-
-        return acc;
-
-      }, {} as Record<string, number[]>)
-    );
-
     const pricesPerDate =
       Object.entries(
         ads
