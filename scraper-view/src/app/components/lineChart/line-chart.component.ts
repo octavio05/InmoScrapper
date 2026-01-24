@@ -1,6 +1,7 @@
-import { Component, computed, input, signal } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
 import { BaseChartDirective } from 'ng2-charts';
 import { LineChartData } from '../../interfaces/lineChartData';
+import { ChartConfigurationService } from '../../services/chart-configuration.service';
 
 @Component({
   selector: 'line-chart',
@@ -9,6 +10,8 @@ import { LineChartData } from '../../interfaces/lineChartData';
   styleUrl: './line-chart.component.css',
 })
 export class LineChartComponent {
+
+  private chartConfigurationService = inject(ChartConfigurationService);
 
   public data = input<LineChartData>();
 
@@ -23,34 +26,36 @@ export class LineChartComponent {
       responsive: true,
       plugins: {
         legend: {
-          onClick: (e: any, legendItem: any, legend: any) => {
-
-            const index = legendItem.datasetIndex;
-            const ci = legend.chart;
-
-            const dataset = ci.data.datasets[index];
-            const uniqueId = dataset.id;
-
-            if (ci.isDatasetVisible(index)) {
-
-              ci.hide(index);
-              legendItem.hidden = true;
-
-            } else {
-
-              ci.show(index);
-              legendItem.hidden = false;
-
-            }
-
-            console.log(`Legend clicked (${uniqueId}): ${legendItem}`);
-
-          }
+          onClick: (e: any, legendItem: any, legend: any) => this.toggleDataSetVisible(legendItem, legend)
         }
       }
     }
   );
 
   public legend = signal(true);
+
+  private toggleDataSetVisible(legendItem: any, legend: any) {
+
+    const datasetIndex = legendItem.datasetIndex;
+    const ci = legend.chart;
+
+    const dataset = ci.data.datasets[datasetIndex];
+    const uniqueId = dataset.id;
+
+    if (ci.isDatasetVisible(datasetIndex)) {
+
+      ci.hide(datasetIndex);
+      legendItem.hidden = true;
+
+    } else {
+
+      ci.show(datasetIndex);
+      legendItem.hidden = false;
+
+    }
+
+    this.chartConfigurationService.updateVisibility(uniqueId, legendItem.hidden);
+
+  }
 
 }

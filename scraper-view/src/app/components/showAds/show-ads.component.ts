@@ -11,6 +11,7 @@ import { PortalType } from '../../enums/portalType';
 import { PropertyType } from '../../enums/propertyType';
 import { Ad } from '../../models/ad.model';
 import { Dataset, LineChartData } from '../../interfaces/lineChartData';
+import { ChartConfigurationService } from '../../services/chart-configuration.service';
 
 @Component({
   selector: 'show-ads',
@@ -28,6 +29,7 @@ import { Dataset, LineChartData } from '../../interfaces/lineChartData';
 export class ShowAdsComponent {
 
   private adsService = inject(AdService);
+  private chartConfigurationService = inject(ChartConfigurationService);
 
   public readonly ExternalLinkIcon = ExternalLink;
   public readonly ChevronsUpDownIcon = ChevronsUpDown;
@@ -81,6 +83,14 @@ export class ShowAdsComponent {
 
       const av = this.calculateAveragePricePerDate(this.filteredAds);
       this.selectedAds.push(av);
+
+      const configuration = this.chartConfigurationService.get();
+      this.allAds.forEach(ad => {
+
+        if (configuration.find(c => c.id === ad.Id && c.selected))
+          this.selectedAds.push(ad);
+
+      });
       this.lineChartData.set(this.convertAdToLineChartData(this.selectedAds));
 
     });
@@ -88,18 +98,26 @@ export class ShowAdsComponent {
   }
 
   getRange(n: number): number[] {
+
     return Array.from({ length: n }, (_, i) => i);
+
   }
 
   changePage(page: number) {
+
     if (page < 0 || page >= this.totalPages()) return;
 
     this.currentPage.set(page);
     this.pagedAds.set(this.filteredAds.slice(page * 5, (page + 1) * 5));
+
   }
 
   toggleSelectedAd(newAd: Ad) {
-    if (this.selectedAds.includes(newAd)) {
+
+    const isSelected = this.selectedAds.includes(newAd);
+    this.chartConfigurationService.updateSelection(newAd.Id, !isSelected);
+
+    if (isSelected) {
       this.selectedAds = this.selectedAds.filter(ad => ad !== newAd);
     } else {
       this.selectedAds.push(newAd);
@@ -110,7 +128,9 @@ export class ShowAdsComponent {
   }
 
   adIsSelected(ad: Ad): boolean {
+
     return this.selectedAds.includes(ad);
+
   }
 
   sortAds(adName: string, sortBy: 'asc' | 'desc') {
@@ -251,8 +271,10 @@ export class ShowAdsComponent {
       .sort((a, b) => a[1].getTime() - b[1].getTime())
       .map(entry => entry[0]);
 
+    const configuration = this.chartConfigurationService.get();
+
     const datasets: Dataset[] = Array.from(
-      selectedAds.map((ad, index) => {
+      selectedAds.map(ad => {
         const priceMap = new Map<string, number>();
         ad.Price.forEach(price => {
           const dateStr = price.date.toLocaleDateString('es-ES', dateFormatOptions);
@@ -260,15 +282,16 @@ export class ShowAdsComponent {
         });
 
         const data = labels.map(label => priceMap.get(label) || 0);
+        const isHidden = configuration.find(c => c.id === ad.Id)?.hidden || false;
 
         return {
           data,
           label: ad.Direction || 'Unknown',
-          id: index === 0 ? '-1' : ad.Id,
+          id: ad.Id,
           fill: false,
           tension: 0.3,
           spanGaps: true,
-          hidden: index === 0
+          hidden: isHidden
         }
       })
     );
